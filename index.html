@@ -26,8 +26,8 @@
 <body>
 
 <div class="container">
-    <h1>Método Sentir — Rastreador & Nuvem</h1>
-    <p class="subtitle">Mapeamento integrado com salvamento automático no Google Sheets.</p>
+    <h1>Método Sentir — Rastreio Necessidades</h1>
+    <p class="subtitle">Mapeamento integrado MPV3.</p>
     
     <div class="form-group">
         <label for="nomeInput">Nome do Cliente:</label>
@@ -44,8 +44,8 @@
         <textarea id="relatoInput" placeholder="Digite ou cole o relato aqui..."></textarea>
     </div>
     
-    <button id="btnEnviar" onclick="processarEEnviar()">Gerar Mapa e Enviar para a Planilha</button>
-    <div id="loadingText" class="loading">Salvando na planilha e gerando mapa...</div>
+    <button id="btnEnviar" onclick="processarEEnviar()">Gerar Mapa </button>
+    <div id="loadingText" class="loading">Gerando mapa...</div>
 
     <div id="resultado" class="result-box">
         <h3>Resultado da Análise (Hipótese de Trabalho)</h3>
@@ -65,8 +65,7 @@
 
 <script>
 // COLE AQUI A URL DO SEU APP DA WEB DO GOOGLE APPS SCRIPT:
-const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwvx1DFFMQwkj_pMcCehOrauTW4eKv7zTIMb8D37CXHk2VF-Yk-4gGAoOS3mnWUuTQq6Q/exec";
-
+const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwY9awlB3WZhgKfKAP29UlbM-7XuISntCyoPGD3qZBc/dev"
 function processarEEnviar() {
     const nome = document.getElementById("nomeInput").value.trim();
     const email = document.getElementById("emailInput").value.trim();
