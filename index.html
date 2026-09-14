@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método Sentir - MVP 3 (Integrado ao Google Sheets)</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 5px; }
+        p.subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px; }
+        input[type="text"], input[type="email"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        textarea { height: 100px; resize: vertical; }
+        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.3s; margin-top: 10px; }
+        button:hover { background-color: #219653; }
+        .result-box { margin-top: 25px; background: #f9fbfb; border-left: 5px solid #27ae60; padding: 20px; border-radius: 0 8px 8px 0; display: none; }
+        .result-box h3 { margin-top: 0; color: #2c3e50; }
+        .result-item { margin-bottom: 10px; font-size: 14px; }
+        .result-item strong { color: #34495e; }
+        .loading { display: none; color: #2980b9; font-weight: bold; text-align: center; margin-top: 10px; }
+        .disclaimer { font-size: 11px; color: #95a5a6; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Método Sentir — Rastreador & Nuvem</h1>
+    <p class="subtitle">Mapeamento integrado com salvamento automático no Google Sheets.</p>
+    
+    <div class="form-group">
+        <label for="nomeInput">Nome do Cliente:</label>
+        <input type="text" id="nomeInput" placeholder="Ex: Ana Silva">
+    </div>
+
+    <div class="form-group">
+        <label for="emailInput">E-mail de Contato:</label>
+        <input type="email" id="emailInput" placeholder="Ex: ana@email.com">
+    </div>
+
+    <div class="form-group">
+        <label for="relatoInput">Relato do Cliente:</label>
+        <textarea id="relatoInput" placeholder="Digite ou cole o relato aqui..."></textarea>
+    </div>
+    
+    <button id="btnEnviar" onclick="processarEEnviar()">Gerar Mapa e Enviar para a Planilha</button>
+    <div id="loadingText" class="loading">Salvando na planilha e gerando mapa...</div>
+
+    <div id="resultado" class="result-box">
+        <h3>Resultado da Análise (Hipótese de Trabalho)</h3>
+        <div class="result-item"><strong>Cliente:</strong> <span id="res-cliente"></span> (<span id="res-email"></span>)</div>
+        <div class="result-item"><strong>Faixa Identificada:</strong> <span id="res-faixa"></span></div>
+        <div class="result-item"><strong>Necessidade Base:</strong> <span id="res-necessidade"></span></div>
+        <div class="result-item"><strong>Mecanismo de Defesa:</strong> <span id="res-defesa"></span></div>
+        <div class="result-item"><strong>Virtude / Habilidade:</strong> <span id="res-habilidade"></span></div>
+        <div class="result-item" style="margin-top: 12px; background: #fff; padding: 10px; border-radius: 6px; border: 1px dashed #27ae60;">
+            <strong>🔍 Pergunta Terapêutica:</strong><br>
+            <span id="res-pergunta" style="font-style: italic; color: #2c3e50;"></span>
+        </div>
+    </div>
+
+    <div class="disclaimer">Aviso: Uso exclusivo como hipótese de investigação terapêutica.</div>
+</div>
+
+<script>
+// COLE AQUI A URL DO SEU APP DA WEB DO GOOGLE APPS SCRIPT:
+const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwvx1DFFMQwkj_pMcCehOrauTW4eKv7zTIMb8D37CXHk2VF-Yk-4gGAoOS3mnWUuTQq6Q/exec";
+
+function processarEEnviar() {
+    const nome = document.getElementById("nomeInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
+    const texto = document.getElementById("relatoInput").value.toLowerCase().trim();
+    
+    if(!nome || !email || !texto) {
+        alert("Por favor, preencha o Nome, o E-mail e o Relato.");
+        return;
+    }
+
+    let faixa = "";
+    let necessidade = "";
+    let defesa = "";
+    let habilidade = "";
+    let pergunta = "";
+
+    // Lógica de mapeamento das 7 faixas
+    if (texto.includes("perigo") || texto.includes("sobreviver") || texto.includes("medo") || texto.includes("dinheiro") || texto.includes("risco")) {
+        faixa = "Faixa 1: Primitivo (Sobrevivência e Reatividade)";
+        necessidade = "Segurança / Proteção contra ameaças & Estabilidade básica";
+        defesa = "Hipervigilância / Luta ou Fuga";
+        habilidade = "Regulação do Sistema Nervoso e Auto-ancoragem";
+        pergunta = "Qual é a ameaça real que o seu corpo físico tenta controlar agora?";
+    } else if (texto.includes("corpo") || texto.includes("cansaço") || texto.includes("dor") || texto.includes("exausta") || texto.includes("dormir")) {
+        faixa = "Faixa 2: Sensação (Corpo e Impulso)";
+        necessidade = "Conforto físico, alívio somático e Descanso adequado";
+        defesa = "Resistência somática / Sobrecarga física";
+        habilidade = "Escuta Corporal e Descanso Consciente";
+        pergunta = "O que seu corpo está exigindo que você pare de fazer imediatamente?";
+    } else if (texto.includes("aprovação") || texto.includes("opinião") || texto.includes("status") || texto.includes("egoísta") || texto.includes("rejeitar")) {
+        faixa = "Faixa 3: Pré-desenvolvimento (Socialização e Adaptação)";
+        necessidade = "Pertencimento / Aceitação grupal & Validação externa";
+        defesa = "Submissão / Sobreadaptação social";
+        habilidade = "Assertividade e Limites Saudáveis";
+        pergunta = "O que você acredita que perderia se deixasse de atender às expectativas dos outros?";
+    } else if (texto.includes("escolha") || texto.includes("clareza") || texto.includes("decidir") || texto.includes("confuso") || texto.includes("organizar")) {
+        faixa = "Faixa 4: Consciência (Auto-observação e Clareza)";
+        necessidade = "Autonomia, Liberdade de escolha & Organização interna";
+        defesa = "Paralisia por análise / Sobrecarga mental";
+        habilidade = "Coerência entre Pensar e Agir";
+        pergunta = "Qual é a escolha que você quer fazer, mas tem medo de assumir a responsabilidade?";
+    } else if (texto.includes("sozinho") || texto.includes("vazio") || texto.includes("amor") || texto.includes("tristeza") || texto.includes("vulnerável")) {
+        faixa = "Faixa 5: Sentir (Profundidade Emocional e Vulnerabilidade)";
+        necessidade = "Conexão emocional profunda & Validação interna";
+        defesa = "Isolamento / Couraça afetiva";
+        habilidade = "Autocompaixão e Intimidade Emocional";
+        pergunta = "Em que momento da sua história você aprendeu que precisava guardar essa dor em segredo?";
+    } else if (texto.includes("sentido") || texto.includes("propósito") || texto.includes("direção") || texto.includes("por que")) {
+        faixa = "Faixa 6: Pré-transcendência (Visão Sistêmica e Sentido)";
+        necessidade = "Propósito, Sentido de vida & Visão sistêmica";
+        defesa = "Desconexão existencial / Rigidez de valores";
+        habilidade = "Discernimento e Flexibilidade Sistêmica";
+        pergunta = "Qual crença antiga sobre o seu papel no mundo precisa morrer para dar lugar ao que você é?";
+    } else {
+        faixa = "Faixa 7: Amor Pleno (Integração e Expansão)";
+        necessidade = "Paz profunda, Unidade & Confiança plena na existência";
+        defesa = "Resistência sutil à entrega incondicional";
+        habilidade = "Entrega Compassiva e Quietude Essencial";
+        pergunta = "Como seria se você simplesmente permitisse que as coisas fossem como são, sem tentar consertá-las?";
+    }
+
+    const dadosEnvio = {
+        nome: nome,
+        email: email,
+        relato: texto,
+        faixa: faixa,
+        necessidade: necessidade,
+        defesa: defesa,
+        pergunta: pergunta
+    };
+
+    // Exibir na tela
+    document.getElementById("res-cliente").innerText = nome;
+    document.getElementById("res-email").innerText = email;
+    document.getElementById("res-faixa").innerText = faixa;
+    document.getElementById("res-necessidade").innerText = necessidade;
+    document.getElementById("res-defesa").innerText = defesa;
+    document.getElementById("res-habilidade").innerText = habilidade;
+    document.getElementById("res-pergunta").innerText = `"${pergunta}"`;
+
+    // Enviar via fetch para o Google Sheets
+    document.getElementById("loadingText").style.display = "block";
+    document.getElementById("btnEnviar").disabled = true;
+
+    fetch(URL_WEB_APP, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dadosEnvio)
+    })
+    .then(() => {
+        document.getElementById("loadingText").style.display = "none";
+        document.getElementById("btnEnviar").disabled = false;
+        document.getElementById("resultado").style.display = "block";
+        alert("Mapa gerado e enviado para a sua planilha com sucesso!");
+    })
+    .catch(error => {
+        console.error("Erro:", error);
+        document.getElementById("loadingText").style.display = "none";
+        document.getElementById("btnEnviar").disabled = false;
+        alert("Houve um erro ao enviar para a planilha, mas o mapa foi exibido abaixo.");
+        document.getElementById("resultado").style.display = "block";
+    });
+}
+</script>
+
+</body>
+</html>
